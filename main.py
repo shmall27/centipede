@@ -1,5 +1,5 @@
-from lib.github import get_contributors_from_repo, get_github_profile
-from lib.db_utils import init_database_if_needed, save_profile_to_db, get_db_connection
+from utils.github import get_contributors_from_repo, get_github_profile
+from utils.db import init_database_if_needed, save_profile_to_db, get_db_connection
 from dotenv import load_dotenv
 import modal
 
