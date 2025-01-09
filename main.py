@@ -1,6 +1,6 @@
 from utils.github import get_contributors_from_repo, get_github_profile, read_repos_file
 from utils.db import init_database_if_needed, save_profile_to_db, get_db_connection
-from utils.search import find_by_language, get_all_users
+from utils.search import find_by_location, get_all_users
 from dotenv import load_dotenv
 import modal
 
@@ -8,7 +8,6 @@ load_dotenv()
 
 app = modal.App(name="gh-scraper")
 
-# Create an image with our dependencies
 image = (modal.Image
          .debian_slim(python_version="3.12")
          .pip_install(
@@ -31,38 +30,62 @@ def get_profile_remote(username: str):
         return None
 
 
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_dotenv()],
+)
+def get_contributors_from_repo_remote(target: tuple[str, str]):
+    """Wrapper for get_contributors_from_repo to run in Modal"""
+    org, repo = target
+    try:
+        return get_contributors_from_repo(org, repo)
+    except Exception as e:
+        print(f"Error processing {org}/{repo}: {e}")
+        return []
+
+
 @app.local_entrypoint()
 def main():
     init_database_if_needed()
     with get_db_connection() as con:
-        repos = read_repos_file()
-        usernames = get_all_users(con)
+        existing_usernames = get_all_users(con)
+        print(f"Found {len(existing_usernames)} existing profiles in database")
 
-        for org, repo in repos:
-            print(f"\nProcessing repo: {org}/{repo}")
-            try:
-                contributors = get_contributors_from_repo(org, repo)
-                repo_usernames = [
-                    contributor.login for contributor in contributors]
-                usernames.update(repo_usernames)
-                print(f"Found {len(repo_usernames)} contributors")
-            except Exception as e:
-                print(f"Error processing {org}/{repo}: {e}")
-                continue
+        new_usernames = set()
+        targets = read_repos_file()
 
-        # Get profiles in parallel
-        profiles = list(get_profile_remote.map(usernames))
+        try:
 
-        # Save profiles to database
+            contributors = [item for sublist in get_contributors_from_repo_remote.map(
+                list(targets)) for item in sublist]
+            repo_usernames = {
+                contributor.login for contributor in contributors}
+
+            repo_new_usernames = repo_usernames - existing_usernames
+            new_usernames.update(repo_new_usernames)
+            print(f"Found {len(repo_usernames)} contributors ({
+                len(repo_new_usernames)} new)")
+        except Exception as e:
+            print(f"Error: {e}")
+
+        if not new_usernames:
+            print("\nNo new profiles to fetch!")
+            return
+
+        print(f"\nFetching {len(new_usernames)} new profiles...")
+
+        profiles = list(get_profile_remote.map(list(new_usernames)))
+
+        successful = 0
         for profile in profiles:
             if profile:
                 try:
                     save_profile_to_db(con, profile)
+                    successful += 1
                     print(f"Saved profile for: {
-                        profile.name if profile.name else 'No name'}")
+                          profile.name if profile.name else 'No name'}")
                 except Exception as e:
                     print(f"Error saving profile: {e}")
 
-        # Search for profiles by language
-        print("\nSearching for profiles by language...")
-        print(find_by_language(con, 'Rust'))
+        print(f"\nSuccessfully saved {
+              successful}/{len(new_usernames)} new profiles")
