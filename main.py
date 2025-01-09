@@ -1,5 +1,6 @@
-from utils.github import get_contributors_from_repo, get_github_profile
+from utils.github import get_contributors_from_repo, get_github_profile, read_repos_file
 from utils.db import init_database_if_needed, save_profile_to_db, get_db_connection
+from utils.search import find_by_language, get_all_users
 from dotenv import load_dotenv
 import modal
 
@@ -34,11 +35,20 @@ def get_profile_remote(username: str):
 def main():
     init_database_if_needed()
     with get_db_connection() as con:
+        repos = read_repos_file()
+        usernames = get_all_users(con)
 
-        # Get list of contributors
-        contributors = get_contributors_from_repo("LineageOS", "android")
-        usernames = [contributor.login for contributor in contributors]
-        print(f"Processing {len(usernames)} contributors...")
+        for org, repo in repos:
+            print(f"\nProcessing repo: {org}/{repo}")
+            try:
+                contributors = get_contributors_from_repo(org, repo)
+                repo_usernames = [
+                    contributor.login for contributor in contributors]
+                usernames.update(repo_usernames)
+                print(f"Found {len(repo_usernames)} contributors")
+            except Exception as e:
+                print(f"Error processing {org}/{repo}: {e}")
+                continue
 
         # Get profiles in parallel
         profiles = list(get_profile_remote.map(usernames))
@@ -49,6 +59,10 @@ def main():
                 try:
                     save_profile_to_db(con, profile)
                     print(f"Saved profile for: {
-                          profile.name if profile.name else 'No name'}")
+                        profile.name if profile.name else 'No name'}")
                 except Exception as e:
                     print(f"Error saving profile: {e}")
+
+        # Search for profiles by language
+        print("\nSearching for profiles by language...")
+        print(find_by_language(con, 'Rust'))

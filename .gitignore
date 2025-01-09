@@ -172,3 +172,6 @@ cython_debug/
 
 # DuckDB file
 *.db
+
+# DSStore file
+.DS_Store

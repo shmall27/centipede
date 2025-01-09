@@ -38,6 +38,7 @@ class GitHubProfile(BaseModel):
         strict_url = True
 
     # Basic Info
+    login: str
     name: Optional[str] = None
     bio: Optional[str] = None
     location: Optional[str] = None
@@ -63,6 +64,20 @@ class GitHubProfile(BaseModel):
     html_url: HttpUrl
     repos_url: HttpUrl
     organizations_url: HttpUrl
+
+
+def read_repos_file() -> list[tuple[str, str]]:
+    """
+    Read repos.txt file and return list of (org, repo) tuples
+    """
+    repos = []
+    with open('repos.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#'):
+                org, repo = line.split('/')
+                repos.append((org, repo))
+    return repos
 
 
 def get_github_headers() -> dict:
@@ -117,7 +132,8 @@ def make_github_request(url: str) -> dict:
 
 
 def get_contributors_from_repo(org: str, repo: str) -> list[GitHubContributor]:
-    url = f"https://api.github.com/repos/{org}/{repo}/contributors"
+    url = f"https://api.github.com/repos/{
+        org}/{repo}/contributors?per_page=100"
     try:
         data = make_github_request(url)
         return [GitHubContributor(**contributor) for contributor in data]
@@ -152,6 +168,7 @@ def get_github_profile(username: str) -> GitHubProfile:
     # Create profile data dict
     profile_data = {
         # Basic Info
+        'login': profile.get('login'),
         'name': profile.get('name'),
         'bio': profile.get('bio'),
         'location': profile.get('location'),

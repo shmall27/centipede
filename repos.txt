@@ -1,0 +1,7 @@
+LineageOS/android
+AOSPA/manifest
+ProtonAOSP/android_manifest
+CalyxOS/platform_manifest
+crdroidandroid/android
+GrapheneOS/platform_manifest
+PixelExperience/manifest
