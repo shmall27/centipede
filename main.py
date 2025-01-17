@@ -1,5 +1,5 @@
 from utils.github import get_contributors_from_repo, get_github_profile, read_repos_file
-from utils.db import init_database_if_needed, save_profile_to_db, get_db_connection
+from utils.db import init_database_if_needed, save_profile_to_db, get_db_connection, export_to_csv
 from utils.search import find_by_location, get_all_users
 from dotenv import load_dotenv
 import modal
@@ -68,6 +68,9 @@ def main():
         except Exception as e:
             print(f"Error: {e}")
 
+        for location_profile in find_by_location(con, 'CA'):
+            print(location_profile)
+
         if not new_usernames:
             print("\nNo new profiles to fetch!")
             return
@@ -89,3 +92,5 @@ def main():
 
         print(f"\nSuccessfully saved {
               successful}/{len(new_usernames)} new profiles")
+
+    export_to_csv(db_path='hiring.db', output_path='hiring.csv')

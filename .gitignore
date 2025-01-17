@@ -173,5 +173,8 @@ cython_debug/
 # DuckDB file
 *.db
 
+# Generated CSV file
+*.csv
+
 # DSStore file
 .DS_Store

@@ -116,3 +116,43 @@ def init_database_if_needed(db_path: str = 'hiring.db'):
     if not os.path.exists(db_path):
         with get_db_connection(db_path) as con:
             init_database(con)
+
+
+def export_to_csv(db_path: str, output_path: str):
+    """
+    Export the github_profiles table from DuckDB to a CSV file.
+
+    Args:
+        db_path (str): Path to the DuckDB database file
+        output_path (str): Path where the CSV file should be saved
+
+    Returns:
+        bool: True if export was successful, False otherwise
+    """
+    try:
+        with get_db_connection(db_path) as con:
+            # Get all columns from the table
+            columns_query = """
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'github_profiles'
+                ORDER BY ordinal_position;
+            """
+            columns = [row[0] for row in con.execute(columns_query).fetchall()]
+
+            # Export data to CSV
+            export_query = f"""
+                COPY (
+                    SELECT {', '.join(columns)}
+                    FROM github_profiles
+                    ORDER BY id
+                ) TO '{output_path}'
+                WITH (HEADER TRUE, DELIMITER ',', QUOTE '"');
+            """
+            con.execute(export_query)
+
+            return True
+
+    except Exception as e:
+        print(f"Error exporting to CSV: {str(e)}")
+        return False
