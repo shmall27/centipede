@@ -1,0 +1,5 @@
+modal
+pydantic==2.10.4
+python-dotenv
+duckdb
+requests

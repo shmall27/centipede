@@ -4,7 +4,7 @@ from typing import Any, Dict, Union
 from datetime import datetime
 import duckdb
 from pydantic import BaseModel
-from utils.github import GitHubProfile
+from .github import GitHubProfile
 from contextlib import contextmanager
 
 

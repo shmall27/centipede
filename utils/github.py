@@ -132,13 +132,12 @@ def make_github_request(url: str) -> dict:
 
 
 def get_contributors_from_repo(org: str, repo: str) -> list[GitHubContributor]:
-    url = f"https://api.github.com/repos/{
-        org}/{repo}/contributors?per_page=100"
+    url = f"https://api.github.com/repos/{org}/{repo}/contributors?per_page=100"
     try:
         data = make_github_request(url)
         return [GitHubContributor(**contributor) for contributor in data]
     except urllib.error.HTTPError as e:
-        print(f"Error accessing API: {e}")
+        print(f"Error accessing API at {url}: {e}")
         return []
     except json.JSONDecodeError as e:
         print(f"Error parsing JSON: {e}")

@@ -5,3 +5,16 @@ CalyxOS/platform_manifest
 crdroidandroid/android
 GrapheneOS/platform_manifest
 PixelExperience/manifest
+topjohnwu/Magisk
+GrapheneOS/hardened_malloc
+google/android-cuttlefish
+google/crosvm
+KomputeProject/kompute
+SnapdragonStudios/adreno-gpu-vulkan-code-sample-framework
+terryky/android_tflite
+tensorflow/tflite-micro
+s1341/binder-rust
+hiking90/rsbinder
+bwalter/rust-aidl-parser
+rust-mobile/ndk
+LawnchairLauncher/lawnchair
